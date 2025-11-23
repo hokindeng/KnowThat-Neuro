@@ -4,7 +4,6 @@ Provides common functionality to reduce code duplication across different API im
 """
 
 import os
-import sys
 import time
 from pathlib import Path
 import re
@@ -12,8 +11,6 @@ import numpy as np
 from enum import Enum
 from typing import Tuple, Dict, Any
 from abc import ABC, abstractmethod
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 from core.prompt_builder import encode_standard_matrix_maze, encode_coordinate_list_maze
 from core.maze_generator import *
@@ -108,84 +105,71 @@ class BaseAPISolver(ABC):
     def solve_maze_with_api(self, maze: np.ndarray, encoding_type: str, use_diag: bool, 
                            size: Tuple[int, int], shape: str, result_path: str):
         """Main method to solve maze using the API."""
-        try:
-            messages = []
-            status = Status.CONTINUE
-            
-            with open(result_path, "w") as file:
-                i = 0
-                while status == Status.CONTINUE:
-                    time.sleep(1)  # Rate limiting
-                    
-                    # Encode the maze
-                    maze_string = self.encode_maze(maze, encoding_type)
-                    
-                    # Get appropriate prompt
-                    if i == 0:
-                        prompt = self.get_initial_prompt(maze_string, encoding_type, use_diag)
-                    else:
-                        prompt = UPDATE_SOLVE_PROMPT_1 + maze_string + UPDATE_SOLVE_PROMPT_2
-                    
-                    messages.append({"role": "user", "content": prompt})
-                    
-                    # Make API call
-                    assistant_reply = self._make_api_call(messages)
-                    messages.append({"role": "assistant", "content": assistant_reply})
-                    
-                    # Log interaction
-                    file.write(prompt)
-                    file.write("\n")
-                    file.write(assistant_reply)
-                    file.write("\n")
-                    
-                    # Parse and update the maze
-                    status, updated_maze = self.parse_and_update(assistant_reply, maze)
-                    
-                    if status == Status.SUCCESS:
-                        file.write("\n\nSOLVE: SUCCESS")
-                        break
-                    elif status == Status.FAIL:
-                        file.write("\n\nSOLVE: FAIL")
-                        break
-                    elif status == Status.CONTINUE:
-                        maze = updated_maze
-                        if i >= 15:  # Maximum iterations
-                            file.write("\n\nSOLVE: FAIL")
-                            break
-                    else:
-                        print("Unexpected status. Terminating.")
-                        break
-                    
-                    i += 1
+        messages = []
+        status = Status.CONTINUE
+        
+        with open(result_path, "w") as file:
+            i = 0
+            while status == Status.CONTINUE:
+                time.sleep(1)  # Rate limiting
                 
-                # Recognition and generation phase
-                messages.append({"role": "user", "content": RECOGNIZE_AND_GENERATE_PROMPT})
+                # Encode the maze
+                maze_string = self.encode_maze(maze, encoding_type)
+                
+                # Get appropriate prompt
+                if i == 0:
+                    prompt = self.get_initial_prompt(maze_string, encoding_type, use_diag)
+                else:
+                    prompt = UPDATE_SOLVE_PROMPT_1 + maze_string + UPDATE_SOLVE_PROMPT_2
+                
+                messages.append({"role": "user", "content": prompt})
+                
+                # Make API call
                 assistant_reply = self._make_api_call(messages)
                 messages.append({"role": "assistant", "content": assistant_reply})
                 
-                file.write(RECOGNIZE_AND_GENERATE_PROMPT)
+                # Log interaction
+                file.write(prompt)
                 file.write("\n")
                 file.write(assistant_reply)
                 file.write("\n")
                 
-                # Check correctness
-                generate_correct = is_correct_generate(assistant_reply, encoding_type, size, shape, maze)
-                recognize_correct = is_correct_recognize(assistant_reply, shape)
+                # Parse and update the maze
+                status, updated_maze = self.parse_and_update(assistant_reply, maze)
                 
-                file.write("\n\nRECOGNIZE: " + ("SUCCESS" if recognize_correct else "FAIL"))
-                file.write("\n\nGENERATE: " + ("SUCCESS" if generate_correct else "FAIL"))
+                if status == Status.SUCCESS:
+                    file.write("\n\nSOLVE: SUCCESS")
+                    break
+                elif status == Status.FAIL:
+                    file.write("\n\nSOLVE: FAIL")
+                    break
+                elif status == Status.CONTINUE:
+                    maze = updated_maze
+                    if i >= 15:  # Maximum iterations
+                        file.write("\n\nSOLVE: FAIL")
+                        break
+                else:
+                    print("Unexpected status. Terminating.")
+                    break
                 
-        except Exception as e:
-            with open(result_path, "w") as file:
-                print(f"\n\nAlert, query did not run! Path: {result_path}")
-                print(f'Alert Number: {self.alert_count}')
-                print(f'Error: {str(e)}')
-                self.alert_count += 1
-                file.write(f"\n\nQuery did not run: {result_path}")
-                file.write(f"\n\nError: {str(e)}")
-                file.write("\n\nSOLVE: FAIL")
-                file.write("\n\nRECOGNIZE: FAIL")
-                file.write("\n\nGENERATE: FAIL")
+                i += 1
+            
+            # Recognition and generation phase
+            messages.append({"role": "user", "content": RECOGNIZE_AND_GENERATE_PROMPT})
+            assistant_reply = self._make_api_call(messages)
+            messages.append({"role": "assistant", "content": assistant_reply})
+            
+            file.write(RECOGNIZE_AND_GENERATE_PROMPT)
+            file.write("\n")
+            file.write(assistant_reply)
+            file.write("\n")
+            
+            # Check correctness
+            generate_correct = is_correct_generate(assistant_reply, encoding_type, size, shape, maze)
+            recognize_correct = is_correct_recognize(assistant_reply, shape)
+            
+            file.write("\n\nRECOGNIZE: " + ("SUCCESS" if recognize_correct else "FAIL"))
+            file.write("\n\nGENERATE: " + ("SUCCESS" if generate_correct else "FAIL"))
     
     @staticmethod
     def load_npy_files(folder_path: str) -> list:
@@ -197,18 +181,15 @@ class BaseAPISolver(ABC):
             for filename in files:
                 if filename.endswith(".npy"):
                     file_path = os.path.join(root, filename)
-                    try:
-                        array_data = np.load(file_path)
-                        file_data = {
-                            'name': filename,
-                            'id': idx,
-                            'path': os.path.relpath(file_path, folder_path),
-                            'data': array_data
-                        }
-                        idx += 1
-                        all_file_data.append(file_data)
-                    except Exception as e:
-                        print(f"Could not load {filename}: {e}")
+                    array_data = np.load(file_path)
+                    file_data = {
+                        'name': filename,
+                        'id': idx,
+                        'path': os.path.relpath(file_path, folder_path),
+                        'data': array_data
+                    }
+                    idx += 1
+                    all_file_data.append(file_data)
         
         return all_file_data
     
@@ -271,15 +252,19 @@ class BaseAPISolver(ABC):
         if encoding_types is None:
             encoding_types = ['matrix', 'coord_list']
         if sizes is None:
-            sizes = [(5, 5), (7, 7)]
+            sizes = [(5, 5)]  # Only 5x5 mazes
         if shapes is None:
-            shapes = SHAPES
+            shapes = SHAPES[:5]  # Only first 5 shapes: square, cross, spiral, triangle, C
         
         print("Starting the maze-solving experiments...")
+        print(f"Running {len(sizes)} size(s), {len(shapes)} shape(s), {len(encoding_types)} encoding(s)")
+        print(f"Total experiments per encoding: {len(sizes)} × {len(shapes)} × 30 samples = {len(sizes) * len(shapes) * 30}")
         
         for encoding_type in encoding_types:
             for size in sizes:
                 for shape in shapes:
                     self.run_specific_experiments(size, shape, encoding_type)
         
-        print("All experiments completed.") 
+        print("All experiments completed.")
+
+

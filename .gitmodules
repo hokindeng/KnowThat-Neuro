@@ -1,0 +1,3 @@
+[submodule "external/three-mountain-interpretability"]
+	path = external/three-mountain-interpretability
+	url = https://github.com/grow-ai-like-a-child/three-mountain-interpretability.git
