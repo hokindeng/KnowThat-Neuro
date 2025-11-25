@@ -210,10 +210,6 @@ class BaseAPISolver(ABC):
             # Determine number of samples based on size
             if size == (5, 5):
                 samples = 30
-            elif size == (7, 7):
-                samples = 5
-            elif size == (9, 9):
-                samples = 3
             else:
                 samples = 1
             

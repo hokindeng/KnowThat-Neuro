@@ -227,7 +227,7 @@ def main():
     parser.add_argument('--encoding', type=str, nargs='+', default=['matrix', 'coord_list'],
                        choices=['matrix', 'coord_list'],
                        help='Encoding types to use')
-    parser.add_argument('--sizes', type=str, nargs='+', default=['5x5', '7x7'],
+    parser.add_argument('--sizes', type=str, nargs='+', default=['5x5'],
                        help='Maze sizes to test')
     
     args = parser.parse_args()

@@ -195,7 +195,7 @@ sample = {
     'task_type': str,  # 'recognize', 'generate', 'solve'
     'enable_thinking': bool,  # True/False
     'maze_metadata': {
-        'size': tuple,  # (7, 7)
+        'size': tuple,  # (5, 5)
         'shape': str,   # 'square', 'hexagon', 'triangle'
         'difficulty': int,  # 1-5
         'has_solution': bool,
@@ -300,7 +300,7 @@ class KnowThatDataAdapter:
             'task_type': task_type,
             'enable_thinking': raw_task.get('enable_thinking', True),
             'maze_metadata': {
-                'size': raw_task.get('maze_size', (7, 7)),
+                'size': raw_task.get('maze_size', (5, 5)),
                 'shape': raw_task.get('maze_shape', 'square'),
                 'difficulty': raw_task.get('difficulty', 3),
                 'has_solution': raw_task.get('has_solution', True),

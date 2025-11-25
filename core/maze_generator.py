@@ -323,25 +323,15 @@ def generate_maze_experiments(size, shape):
     if not os.path.isdir(size_shape_path):
         os.makedirs(size_shape_path)
     if size == (5, 5):
-        # Generate 5 samples of shape
+        # Generate 5 samples of shape
         sample_mazes = get_sample_mazes(size, shape, k=5)
-        for i, maze in enumerate(sample_mazes):
-            np.save(size_shape_path + f"{str(size[0])}x{str(size[1])}_{shape}_{str(i)}.npy", maze)
-    elif size == (7, 7):
-        # Generate 30 samples of shape
-        sample_mazes = get_sample_mazes(size, shape, k=30)
-        for i, maze in enumerate(sample_mazes):
-            np.save(size_shape_path + f"{str(size[0])}x{str(size[1])}_{shape}_{str(i)}.npy", maze)
-    elif size == (9, 9):
-        # Generate 50 samples of shape
-        sample_mazes = get_sample_mazes(size, shape, k=50)
         for i, maze in enumerate(sample_mazes):
             np.save(size_shape_path + f"{str(size[0])}x{str(size[1])}_{shape}_{str(i)}.npy", maze)
 
 
 '''
 if __name__ == "__main__":
-    for size in [(5, 5), (7, 7), (9, 9)]:
+    for size in [(5, 5)]:
         for shape in SHAPES:
             generate_maze_experiments(size, shape)
 '''
